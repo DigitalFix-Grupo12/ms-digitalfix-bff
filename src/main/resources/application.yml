@@ -14,9 +14,11 @@ spring:
 
 # Application (client) ID del registro "digitalfix-api" (recurso protegido).
 # Se usa para validar el claim "aud" del token (ver JwtAudienceValidator).
+# IMPORTANTE: los access tokens v2.0 de Entra ID llevan el GUID puro en
+# "aud" (NO "api://<guid>"), aunque el scope se pida como api://<guid>/algo.
 digitalfix:
   security:
-    expected-audience: api://${AZURE_API_CLIENT_ID}
+    expected-audience: ${AZURE_API_CLIENT_ID}
     # CORS: en dev el frontend corre en :4200
     allowed-origins: http://localhost:4200
 
