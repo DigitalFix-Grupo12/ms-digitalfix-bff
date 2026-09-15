@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-digitalfix-bff
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Entra ID (v2 endpoint). Reemplaza <AZURE_TENANT_ID> con el valor
+          # que imprime scripts/Register-EntraApps.ps1.
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+
+# Application (client) ID del registro "digitalfix-api" (recurso protegido).
+# Se usa para validar el claim "aud" del token (ver JwtAudienceValidator).
+digitalfix:
+  security:
+    expected-audience: api://${AZURE_API_CLIENT_ID}
+    # CORS: en dev el frontend corre en :4200
+    allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    org.springframework.security: INFO

@@ -1,0 +1,25 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+
+### Spring Boot ###
+HELP.md
+
+### OS ###
+.DS_Store
+
+### Variables de entorno / secretos ###
+run-bff.ps1
+.env
+*.pem
