@@ -29,6 +29,7 @@ import java.time.Instant;
 final class ProxySupport {
 
     static final String USER_HEADER = "X-User-Name";
+    static final String ROLES_HEADER = "X-User-Roles";
 
     private ProxySupport() {}
 
@@ -44,7 +45,8 @@ final class ProxySupport {
         try {
             RestClient.RequestBodySpec spec = client.method(method)
                 .uri(uriTemplate, uriVars)
-                .header(USER_HEADER, currentUser());
+                .header(USER_HEADER, currentUser())
+                .header(ROLES_HEADER, currentRoles());
             if (body != null) {
                 spec = spec.contentType(MediaType.APPLICATION_JSON).body(body);
             }
@@ -62,6 +64,23 @@ final class ProxySupport {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(json.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    /**
+     * App Roles del token ya convertidos a authorities (ROLE_Admin -> Admin).
+     * Los microservicios los usan para autorizacion a nivel de dato
+     * (ej. un Cliente solo ve sus propias ordenes). Nunca queda vacio para
+     * un usuario: sin rol valido el BFF ya respondio 403 antes de llegar aqui.
+     */
+    static String currentRoles() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return "";
+        return auth.getAuthorities().stream()
+            .map(a -> a.getAuthority())
+            .filter(a -> a.startsWith("ROLE_"))
+            .map(a -> a.substring(5))
+            .sorted()
+            .collect(java.util.stream.Collectors.joining(","));
     }
 
     /** preferred_username (UPN/email) > upn > oid > sub. Todos son ASCII-safe para un header. */

@@ -27,7 +27,11 @@ public class AuditController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('Admin', 'Auditor')")
-    public ResponseEntity<byte[]> timeline(@RequestParam(defaultValue = "100") int limit) {
-        return ProxySupport.forward(client, SERVICE, HttpMethod.GET, null, "/api/audit?limit={l}", limit);
+    public ResponseEntity<byte[]> timeline(@RequestParam(defaultValue = "100") int limit,
+                                           @RequestParam(required = false) String referencia) {
+        return referencia == null || referencia.isBlank()
+            ? ProxySupport.forward(client, SERVICE, HttpMethod.GET, null, "/api/audit?limit={l}", limit)
+            : ProxySupport.forward(client, SERVICE, HttpMethod.GET, null,
+                "/api/audit?limit={l}&referencia={r}", limit, referencia);
     }
 }
