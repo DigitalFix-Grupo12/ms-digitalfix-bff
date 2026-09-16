@@ -12,11 +12,11 @@ spring:
           # que imprime scripts/Register-EntraApps.ps1.
           issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
 
-  # Base de datos: H2 en modo archivo (persiste entre reinicios del proceso,
-  # a diferencia del H2 en memoria). Para produccion real, cambiar por
-  # PostgreSQL/MySQL en RDS solo tocando estas 4 propiedades.
+  # Base de datos: H2 en memoria. Para produccion real, cambiar por
+  # PostgreSQL/MySQL en RDS solo tocando estas 4 propiedades (entidades y
+  # repositorios de Spring Data JPA no cambian nada).
   datasource:
-    url: jdbc:h2:file:./data/digitalfix;AUTO_SERVER=TRUE
+    url: jdbc:h2:mem:digitalfix;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ''
@@ -28,7 +28,6 @@ spring:
   h2:
     console:
       enabled: false
-      path: /h2-console
 
 # Application (client) ID del registro "digitalfix-api" (recurso protegido).
 # Se usa para validar el claim "aud" del token (ver JwtAudienceValidator).
