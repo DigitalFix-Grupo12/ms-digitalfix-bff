@@ -1,6 +1,8 @@
 package cl.duoc.digitalfix.bff.controller;
 
 import cl.duoc.digitalfix.bff.dto.WorkOrderDto;
+import cl.duoc.digitalfix.bff.entity.WorkOrder;
+import cl.duoc.digitalfix.bff.repository.WorkOrderRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,21 +12,21 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * NOTA: almacenamiento en memoria solo para EP1 (demostrar el flujo
- * MSAL -> BFF -> autorización -> respuesta). En la evaluación de
- * microservicios este controller delegará a ms-digitalfix-workorders
- * vía HTTP (RestClient/WebClient) en lugar de guardar el estado aquí.
+ * Persistencia real via Spring Data JPA + H2 (ver application.yml). En la
+ * evaluacion de microservicios este controller pasara a delegar a
+ * ms-digitalfix-workorders via HTTP en lugar de tener su propio repositorio.
  */
 @RestController
 @RequestMapping("/api/workorders")
 public class WorkOrdersController {
 
-    private final Map<Long, WorkOrderDto> store = new ConcurrentHashMap<>();
-    private final AtomicLong sequence = new AtomicLong(1);
+    private final WorkOrderRepository repository;
+
+    public WorkOrdersController(WorkOrderRepository repository) {
+        this.repository = repository;
+    }
 
     // Regla del caso: CREADA -> ASIGNADA -> EN_DESPLAZAMIENTO -> EN_EJECUCION -> CERRADA/CANCELADA
     // "No se puede pasar a EN_EJECUCION sin ASIGNAR"
@@ -37,26 +39,28 @@ public class WorkOrdersController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor', 'Cliente')")
-    public List<WorkOrderDto> list(@RequestParam(required = false) String status) {
-        return store.values().stream()
-            .filter(o -> status == null || status.equalsIgnoreCase(o.getStatus()))
-            .toList();
+    public List<WorkOrder> list(@RequestParam(required = false) String status) {
+        if (status == null) {
+            return repository.findAll();
+        }
+        return repository.findByStatusIgnoreCase(status);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor', 'Cliente')")
-    public WorkOrderDto getById(@PathVariable Long id) {
+    public WorkOrder getById(@PathVariable Long id) {
         return findOrThrow(id);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor', 'Cliente')")
-    public ResponseEntity<WorkOrderDto> create(@Valid @RequestBody WorkOrderDto dto) {
-        long id = sequence.getAndIncrement();
-        dto.setId(id);
-        dto.setStatus("CREADA");
-        store.put(id, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    public ResponseEntity<WorkOrder> create(@Valid @RequestBody WorkOrderDto dto) {
+        WorkOrder order = new WorkOrder();
+        order.setDescripcion(dto.getDescripcion());
+        order.setClienteId(dto.getClienteId());
+        order.setStatus("CREADA");
+        WorkOrder saved = repository.save(order);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     /**
@@ -66,8 +70,8 @@ public class WorkOrdersController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor')")
-    public WorkOrderDto updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        WorkOrderDto order = findOrThrow(id);
+    public WorkOrder updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        WorkOrder order = findOrThrow(id);
         String newStatus = body.get("status");
         String tecnicoId = body.get("tecnicoId");
 
@@ -86,14 +90,11 @@ public class WorkOrdersController {
         }
 
         order.setStatus(newStatus);
-        return order;
+        return repository.save(order);
     }
 
-    private WorkOrderDto findOrThrow(Long id) {
-        WorkOrderDto order = store.get(id);
-        if (order == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Orden no encontrada: " + id);
-        }
-        return order;
+    private WorkOrder findOrThrow(Long id) {
+        return repository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Orden no encontrada: " + id));
     }
 }
