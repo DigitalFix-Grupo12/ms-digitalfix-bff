@@ -12,23 +12,6 @@ spring:
           # que imprime scripts/Register-EntraApps.ps1.
           issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
 
-  # Base de datos: H2 en memoria. Para produccion real, cambiar por
-  # PostgreSQL/MySQL en RDS solo tocando estas 4 propiedades (entidades y
-  # repositorios de Spring Data JPA no cambian nada).
-  datasource:
-    url: jdbc:h2:mem:digitalfix;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ''
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    open-in-view: false
-  h2:
-    console:
-      enabled: false
-
 # Application (client) ID del registro "digitalfix-api" (recurso protegido).
 # Se usa para validar el claim "aud" del token (ver JwtAudienceValidator).
 # IMPORTANTE: los access tokens v2.0 de Entra ID llevan el GUID puro en
@@ -38,6 +21,13 @@ digitalfix:
     expected-audience: ${AZURE_API_CLIENT_ID}
     # CORS: en dev el frontend corre en :4200
     allowed-origins: http://localhost:4200
+  # URLs de los microservicios de dominio. Todos corren en el mismo host
+  # (localhost) -- el BFF es el unico expuesto hacia afuera (via API Gateway).
+  services:
+    workorders-url: http://localhost:8082
+    catalog-url: http://localhost:8083
+    report-url: http://localhost:8084
+    audit-url: http://localhost:8085
 
 logging:
   level:

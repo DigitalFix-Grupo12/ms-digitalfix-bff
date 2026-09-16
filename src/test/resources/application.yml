@@ -4,13 +4,13 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://example.com/fake-issuer
-  datasource:
-    url: jdbc:h2:mem:testdb
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
 
 digitalfix:
   security:
     expected-audience: test-audience
     allowed-origins: http://localhost:4200
+  services:
+    workorders-url: http://localhost:19082
+    catalog-url: http://localhost:19083
+    report-url: http://localhost:19084
+    audit-url: http://localhost:19085
