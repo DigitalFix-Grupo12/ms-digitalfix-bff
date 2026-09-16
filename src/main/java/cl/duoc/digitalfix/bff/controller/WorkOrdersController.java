@@ -59,16 +59,30 @@ public class WorkOrdersController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    /**
+     * Cambia de estado. Si el body incluye "tecnicoId" y la transición es
+     * CREADA -> ASIGNADA, además asigna el técnico (requerido por el caso:
+     * no se puede pasar a EN_EJECUCION sin haber asignado a alguien).
+     */
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor')")
     public WorkOrderDto updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         WorkOrderDto order = findOrThrow(id);
         String newStatus = body.get("status");
+        String tecnicoId = body.get("tecnicoId");
 
         List<String> allowed = ALLOWED_TRANSITIONS.getOrDefault(order.getStatus(), List.of());
         if (!allowed.contains(newStatus)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "Transición inválida: %s -> %s".formatted(order.getStatus(), newStatus));
+        }
+
+        if ("ASIGNADA".equals(newStatus)) {
+            if (tecnicoId == null || tecnicoId.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Falta tecnicoId: no se puede asignar sin indicar el técnico");
+            }
+            order.setTecnicoId(tecnicoId);
         }
 
         order.setStatus(newStatus);
