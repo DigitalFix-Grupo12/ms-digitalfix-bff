@@ -23,3 +23,5 @@ HELP.md
 run-bff.ps1
 .env
 *.pem
+
+data/
