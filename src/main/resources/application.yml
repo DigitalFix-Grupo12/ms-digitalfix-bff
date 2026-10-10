@@ -28,6 +28,7 @@ digitalfix:
     catalog-url: http://localhost:8083
     report-url: http://localhost:8084
     audit-url: http://localhost:8085
+    rabbit-admin-url: http://localhost:8087
 
 logging:
   level:

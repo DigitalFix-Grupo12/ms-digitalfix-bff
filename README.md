@@ -30,6 +30,7 @@ Sin token o con token inválido responde **401**; con un rol sin permiso, **403*
 | GET | /api/catalog/services, /api/catalog/services/{id} | Admin, Supervisor | catalog :8083 |
 | GET | /api/report/kpis | Admin | report :8084 |
 | GET | /api/audit?limit&referencia | Admin, Auditor | audit :8085 |
+| GET, POST, DELETE | /api/rabbit/** (queues, exchanges, bindings, messages, overview) | Admin | rabbit-admin :8087 |
 
 El BFF propaga la identidad en los headers `X-User-Name` (`preferred_username`) y
 `X-User-Roles`; con eso `ms-digitalfix-workorders` limita al rol Cliente a sus propias órdenes.

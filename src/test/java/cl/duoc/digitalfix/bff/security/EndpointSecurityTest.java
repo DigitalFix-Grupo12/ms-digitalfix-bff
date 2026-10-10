@@ -2,6 +2,7 @@ package cl.duoc.digitalfix.bff.security;
 
 import cl.duoc.digitalfix.bff.config.SecurityConfig;
 import cl.duoc.digitalfix.bff.controller.AuditController;
+import cl.duoc.digitalfix.bff.controller.RabbitAdminController;
 import cl.duoc.digitalfix.bff.controller.ReportController;
 import cl.duoc.digitalfix.bff.controller.WorkOrdersController;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *    microservicio escuchando (puertos 190xx), el BFF responde 503 JSON.
  *    Eso prueba que la autorizacion dejo pasar y que el proxy degrada bien.
  */
-@WebMvcTest(controllers = {WorkOrdersController.class, ReportController.class, AuditController.class})
+@WebMvcTest(controllers = {WorkOrdersController.class, ReportController.class, AuditController.class,
+    RabbitAdminController.class})
 @Import(SecurityConfig.class)
 class EndpointSecurityTest {
 
@@ -72,5 +76,28 @@ class EndpointSecurityTest {
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_Supervisor"))))
             .andExpect(status().isServiceUnavailable())
             .andExpect(jsonPath("$.message").value("Servicio workorders no disponible"));
+    }
+
+    @Test
+    void supervisorNoAdministraRabbit_403() throws Exception {
+        mockMvc.perform(post("/api/rabbit/queues")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"q.demo\"}")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_Supervisor"))))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void sinTokenNoBorraColas_401() throws Exception {
+        mockMvc.perform(delete("/api/rabbit/queues/q.demo"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void adminAdministraRabbit_seReenvia() throws Exception {
+        mockMvc.perform(get("/api/rabbit/queues")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_Admin"))))
+            .andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.message").value("Servicio rabbit-admin no disponible"));
     }
 }

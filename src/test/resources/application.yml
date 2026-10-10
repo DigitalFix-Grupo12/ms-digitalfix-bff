@@ -14,3 +14,4 @@ digitalfix:
     catalog-url: http://localhost:19083
     report-url: http://localhost:19084
     audit-url: http://localhost:19085
+    rabbit-admin-url: http://localhost:19087
