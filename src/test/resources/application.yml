@@ -1,13 +1,10 @@
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://example.com/fake-issuer
-
 digitalfix:
   security:
-    expected-audience: test-audience
+    tenants:
+      - tenant-id: 00000000-0000-0000-0000-00000000000a
+        audience: test-audience-a
+      - tenant-id: 00000000-0000-0000-0000-00000000000b
+        audience: test-audience-b
     allowed-origins: http://localhost:4200
   services:
     workorders-url: http://localhost:19082

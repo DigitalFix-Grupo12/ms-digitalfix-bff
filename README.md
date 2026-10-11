@@ -10,10 +10,10 @@ al microservicio de dominio correspondiente.
 
 | Verificación | Implementación |
 |---|---|
-| Firma | Claves públicas JWKS del tenant (`issuer-uri` → discovery OIDC) |
+| Emisor (`iss`) | Lista cerrada de tenants (`MultiTenantJwtResolver`): `https://login.microsoftonline.com/<tenant>/v2.0` de Kevin y de Boris; otro issuer → 401 |
+| Firma | Claves públicas JWKS del tenant emisor (discovery OIDC, decoder por tenant en caché) |
 | Vigencia (`exp`, `nbf`) | Validadores por defecto de Spring Security |
-| Emisor (`iss`) | `https://login.microsoftonline.com/<tenant>/v2.0` |
-| Audiencia (`aud`) | `JwtAudienceValidator` (GUID de la app `digitalfix-api`) |
+| Audiencia (`aud`) | `JwtAudienceValidator` (GUID de la `digitalfix-api` de ese tenant) |
 | Roles | `EntraIdRolesConverter`: claim `roles` → `ROLE_Admin`, `ROLE_Supervisor`, ... |
 
 Sin token o con token inválido responde **401**; con un rol sin permiso, **403** (JSON).
@@ -40,8 +40,9 @@ Si un microservicio no responde, el BFF devuelve **503** con cuerpo JSON en vez 
 
 | Variable | Descripción |
 |---|---|
-| `AZURE_TENANT_ID` | Tenant de Entra ID |
-| `AZURE_API_CLIENT_ID` | Application ID de `digitalfix-api` (audiencia esperada) |
+| `AZURE_TENANT_ID` | Tenant principal de Entra ID (Kevin) |
+| `AZURE_API_CLIENT_ID` | Application ID de su `digitalfix-api` (audiencia esperada) |
+| `AZURE_TENANT_ID_2` / `AZURE_API_CLIENT_ID_2` | Segundo tenant (Boris); opcional, vacío = deshabilitado |
 | `DIGITALFIX_SECURITY_ALLOWED_ORIGINS` | Orígenes CORS permitidos (en la EC2 lo define el user-data) |
 
 ## Ejecutar

@@ -8,11 +8,9 @@ import cl.duoc.digitalfix.bff.controller.WorkOrdersController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -38,12 +36,17 @@ class EndpointSecurityTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private JwtDecoder jwtDecoder; // evita resolver el issuer real de Entra ID en el test
-
     @Test
     void sinToken_devuelve401() throws Exception {
         mockMvc.perform(get("/api/workorders"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void tokenDeTenantNoConfiado_devuelve401() throws Exception {
+        mockMvc.perform(get("/api/workorders")
+                .header("Authorization", "Bearer " + MultiTenantJwtResolverTest.unsignedToken(
+                    "https://login.microsoftonline.com/99999999-9999-9999-9999-999999999999/v2.0")))
             .andExpect(status().isUnauthorized());
     }
 
