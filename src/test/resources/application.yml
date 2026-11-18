@@ -12,3 +12,9 @@ digitalfix:
     report-url: http://localhost:19084
     audit-url: http://localhost:19085
     rabbit-admin-url: http://localhost:19087
+    kafka-admin-url: http://localhost:19088
+  # Los tests no usan broker: la auditoria se verifica con un publicador en memoria
+  kafka:
+    enabled: false
+    topics:
+      audit-timeline: audit.timeline

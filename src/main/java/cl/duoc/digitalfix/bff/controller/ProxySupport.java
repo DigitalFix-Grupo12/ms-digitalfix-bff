@@ -42,9 +42,23 @@ final class ProxySupport {
 
     static ResponseEntity<byte[]> forward(RestClient client, String service, HttpMethod method,
                                           Object body, String uriTemplate, Object... uriVars) {
+        return exchange(client.method(method).uri(uriTemplate, uriVars), service, body);
+    }
+
+    /**
+     * Reenvio de una ruta ya armada (path + query del request original), sin
+     * plantillas: para gateways genericos como /api/kafka/**. La ruta se usa
+     * tal cual llego (ya codificada), sin volver a codificarla.
+     */
+    static ResponseEntity<byte[]> forwardRaw(RestClient client, String service, HttpMethod method,
+                                             Object body, String pathAndQuery) {
+        return exchange(client.method(method).uri(builder -> java.net.URI.create(
+                builder.build().toString() + pathAndQuery)), service, body);
+    }
+
+    private static ResponseEntity<byte[]> exchange(RestClient.RequestBodySpec base, String service, Object body) {
         try {
-            RestClient.RequestBodySpec spec = client.method(method)
-                .uri(uriTemplate, uriVars)
+            RestClient.RequestBodySpec spec = base
                 .header(USER_HEADER, currentUser())
                 .header(ROLES_HEADER, currentRoles());
             if (body != null) {

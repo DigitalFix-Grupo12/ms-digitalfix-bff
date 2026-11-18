@@ -27,4 +27,11 @@ public class ReportController {
     public ResponseEntity<byte[]> kpis(@RequestParam(defaultValue = "last24h") String range) {
         return ProxySupport.forward(client, SERVICE, HttpMethod.GET, null, "/api/report/kpis?range={r}", range);
     }
+
+    /** Panel en vivo (proyeccion alimentada por Kafka): el frontend lo consulta cada pocos segundos. */
+    @GetMapping("/live")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<byte[]> live() {
+        return ProxySupport.forward(client, SERVICE, HttpMethod.GET, null, "/api/report/live");
+    }
 }

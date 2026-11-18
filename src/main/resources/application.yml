@@ -4,6 +4,21 @@ server:
 spring:
   application:
     name: ms-digitalfix-bff
+  # Productor Kafka del timeline de auditoria (quien / que / cuando / desde donde)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    client-id: ms-digitalfix-bff
+    producer:
+      acks: all
+      retries: 5
+      compression-type: lz4
+      properties:
+        enable.idempotence: true
+        linger.ms: 10
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        # Si el cluster no responde, send() no bloquea mas de 3 s el hilo de la peticion
+        max.block.ms: 3000
 
 # Tenants de Microsoft Entra ID en los que confia el BFF (uno por integrante).
 # Cada uno aporta: Directory (tenant) ID y Application (client) ID de su
@@ -28,6 +43,13 @@ digitalfix:
     report-url: http://localhost:8084
     audit-url: http://localhost:8085
     rabbit-admin-url: http://localhost:8087
+    kafka-admin-url: http://localhost:8088
+  # Auditoria por streaming: el BFF publica cada accion (y cada acceso denegado)
+  # en audit.timeline; lo consume ms-digitalfix-audit (grupo audit-timeline).
+  kafka:
+    enabled: ${KAFKA_ENABLED:true}
+    topics:
+      audit-timeline: audit.timeline
 
 logging:
   level:

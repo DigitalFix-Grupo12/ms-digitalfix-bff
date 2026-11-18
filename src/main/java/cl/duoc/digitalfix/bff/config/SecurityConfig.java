@@ -1,6 +1,10 @@
 package cl.duoc.digitalfix.bff.config;
 
+import cl.duoc.digitalfix.bff.audit.AuditTimelinePublisher;
+import cl.duoc.digitalfix.bff.audit.AuditTrailFilter;
 import cl.duoc.digitalfix.bff.security.EntraTenantsProperties;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import cl.duoc.digitalfix.bff.security.MultiTenantJwtResolver;
 import cl.duoc.digitalfix.bff.security.RestAuthEntryPoints;
 import org.slf4j.Logger;
@@ -45,7 +49,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           JwtIssuerAuthenticationManagerResolver jwtIssuerResolver) throws Exception {
+                                           JwtIssuerAuthenticationManagerResolver jwtIssuerResolver,
+                                           ObjectProvider<AuditTimelinePublisher> auditPublisher,
+                                           @Value("${spring.application.name:ms-digitalfix-bff}") String source) throws Exception {
+        // Auditoria (Kafka audit.timeline): despues de validar el token, para conocer
+        // al usuario y registrar tambien los 401/403 del control de acceso.
+        AuditTimelinePublisher publisher = auditPublisher.getIfAvailable();
+        if (publisher != null) {
+            http.addFilterAfter(new AuditTrailFilter(publisher, source), BearerTokenAuthenticationFilter.class);
+        }
         http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
@@ -56,6 +68,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/audit/**").hasAnyRole("Admin", "Auditor")
                 .requestMatchers("/api/report/**").hasRole("Admin")
                 .requestMatchers("/api/rabbit/**").hasRole("Admin")
+                .requestMatchers("/api/kafka/**").hasRole("Admin")
                 .requestMatchers("/api/catalog/**").hasAnyRole("Admin", "Supervisor")
                 .requestMatchers("/api/workorders/**").hasAnyRole("Admin", "Supervisor", "Cliente")
                 .anyRequest().authenticated())
