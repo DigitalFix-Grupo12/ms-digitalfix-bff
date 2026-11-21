@@ -122,8 +122,17 @@ public class AuditTrailFilter extends OncePerRequestFilter {
         return "desconocido";
     }
 
-    /** API Gateway agrega X-Forwarded-For con la IP real del cliente como primer valor. */
+    /**
+     * IP real del cliente. El API Gateway la escribe en X-Client-Ip desde
+     * $context.identity.sourceIp (sobrescribe cualquier valor que envie el cliente,
+     * asi que no se puede falsificar). Respaldo: primer valor de X-Forwarded-For
+     * (proxy local) y, por ultimo, la direccion de la conexion.
+     */
     static String clientIp(HttpServletRequest request) {
+        String gateway = request.getHeader("X-Client-Ip");
+        if (gateway != null && !gateway.isBlank()) {
+            return truncate(gateway.trim(), 45);
+        }
         String forwarded = request.getHeader("X-Forwarded-For");
         String ip = forwarded != null && !forwarded.isBlank() ? forwarded.split(",")[0].trim() : request.getRemoteAddr();
         return truncate(ip, 45);

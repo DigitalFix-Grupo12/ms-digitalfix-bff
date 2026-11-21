@@ -79,6 +79,18 @@ class AuditTrailFilterTest {
     }
 
     @Test
+    void laIpDelApiGatewayTienePrioridadSobreXForwardedFor() throws Exception {
+        mvc.perform(post("/api/rabbit/queues").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"q\"}")
+                        .header("X-Client-Ip", "190.20.30.40")
+                        .header("X-Forwarded-For", "1.1.1.1")
+                        .with(jwt().jwt(j -> j.claim("preferred_username", "cli@test"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_Cliente"))))
+                .andExpect(status().isForbidden());
+
+        assertThat(SENT).singleElement().satisfies(e -> assertThat(e.sourceIp()).isEqualTo("190.20.30.40"));
+    }
+
+    @Test
     void accesoDenegadoSeAuditaComoDenied() throws Exception {
         mvc.perform(post("/api/rabbit/queues").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"q\"}")
                         .with(jwt().jwt(j -> j.claim("preferred_username", "cli@test"))
